@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>  
+<data> 
+    <record id="custom_sale_line" model="ir.ui.view">
+        <field name="name">custom_sale_line</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page/field[@name='order_line']/tree/field[@name='price_subtotal']" position="after">
+                <field name="custom_id" domain="[('product_id', '=', product_id)]" context="{'product_id':product_id}"/>                
+            </xpath>
+            <xpath expr="//form/header" position="replace">
+                <header>
+                    <button name="action_quotation_send" string="Send by Email" type="object" states="draft" class="btn-primary"/>
+                    <button name="action_quotation_send" type="object" string="Send PRO-FORMA Invoice" groups="sale.group_proforma_sales" class="btn-primary" attrs="{'invisible': ['|', ('state', '!=', 'draft'), ('invoice_count','&gt;=',1)]}" context="{'proforma': True}"/>
+                    <button name="print_quotation" string="Print" type="object" states="draft" class="btn-primary o_sale_print"/>
+                    <button name="action_confirm" id="action_confirm"
+                        string="Confirm Sale" class="btn-primary" type="object"
+                        attrs="{'invisible': [('is_normal_confirm_sale','=',False)]}" />
+                    <button name="action_confirm"
+                        string="Confirm Sale" class="btn-primary" type="object"
+                        attrs="{'invisible': [('is_warning_confirm_sale','=',False)]}" confirm="There is Classsification that empty. Are you sure to Confirm Sale ?"/>
+                    <button name="action_quotation_send" type="object" string="Send PRO-FORMA Invoice" groups="sale.group_proforma_sales" attrs="{'invisible': ['|', ('state', '=', 'draft'), ('invoice_count','&gt;=',1)]}" context="{'proforma': True}"/>
+                    <button name="print_quotation" string="Print" type="object" states="sent,sale" class="o_sale_print"/>
+                    <button name="action_quotation_send" string="Send by Email" type="object" states="sent,sale"/>
+                    <button name="action_cancel" states="draft,sent,sale" type="object" string="Cancel"/>
+                    <button name="action_draft" states="cancel" type="object" string="Set to Quotation"/>
+                    <button name="action_done" type="object" string="Lock" states="sale"
+                        help="If the sale is locked, you can not modify it anymore. However, you will still be able to invoice or deliver."/>
+                    <button name="action_unlock" type="object" string="Unlock" states="done" groups="sales_team.group_sale_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,sale"/>
+                    <field name="is_normal_confirm_sale" invisible="1" />
+                    <field name="is_warning_confirm_sale" invisible="1" />
+                </header>             
+            </xpath>
+            <field name="tax_id" position="after">
+                <field name="custom_id" />
+            </field>          
+        </field>
+    </record>
+
+    <record id="view_order_tree_inherit" model="ir.ui.view">
+        <field name="name">view_order_tree_inherit</field>
+        <field name="model">sale.order</field>
+        <field name="priority">2</field>
+        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="arch" type="xml">
+            <tree position="replace">
+                <tree string="Sales Orders" decoration-muted="is_classification_has_edited==True">
+                    <field name="message_needaction" invisible="1"/>
+                    <field name="name" string="Order Number"/>
+                    <field name="confirmation_date" string="Order Date"/>
+                    <field name="partner_id"/>
+                    <field name="user_id"/>
+                    <field name="amount_total" sum="Total Tax Included" widget="monetary"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="invoice_status" invisible="1"/>
+                    <field name="state" invisible="1"/>
+                    <field name="is_classification_has_edited" invisible="1"/>
+                </tree>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_quotation_tree_inherit" model="ir.ui.view">
+        <field name="name">view_quotation_tree_inherit</field>
+        <field name="model">sale.order</field>
+        <field name="priority">4</field>
+        <field name="inherit_id" ref="sale.view_quotation_tree"/>
+        <field name="arch" type="xml">
+            <tree position="replace">
+                <tree string="Quotation" class="o_sale_order" decoration-muted="is_classification_has_edited==True">
+                    <field name="message_needaction" invisible="1"/>
+                    <field name="name" string="Quotation Number"/>
+                    <field name="date_order" string="Quotation Date"/>
+                    <field name="partner_id"/>
+                    <field name="user_id"/>
+                    <field name="amount_total" sum="Total Tax Included" widget="monetary"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="state"/>
+                    <field name="is_classification_has_edited" invisible="1"/>
+                </tree>
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="view_order_line_manufacture_info_form">
+        <field name="name">Manufacture Info</field>
+        <field name="model">sale.order.line.manufacture.info</field>
+        <field name="arch" type="xml">
+            <form create="0" delete="0">
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object" states="draft" class="btn-primary" groups="custom_sale.group_confirm_manufactuure_info"/>
+                    <field name="state" widget="statusbar" />
+                </header>
+                <group>
+                    <group>
+                        <field name="product_id" attrs="{'readonly':[('state','=','confirmed')]}"/>
+                        <field name="length" attrs="{'readonly':[('state','=','confirmed')]}"/>
+                        <field name="width" attrs="{'readonly':[('state','=','confirmed')]}"/>
+                    </group>
+                    <group>
+                        <field name="is_printing" attrs="{'readonly':[('state','=','confirmed')]}"/>
+                        <field name="is_dry_lamination" attrs="{'readonly':[('state','=','confirmed')]}"/>
+                        <field name="is_extrusi" attrs="{'readonly':[('state','=','confirmed')]}"/>
+                        <field name="is_slitting" attrs="{'readonly':[('state','=','confirmed')]}"/>
+                        <field name="is_bag_making" attrs="{'readonly':[('state','=','confirmed')]}"/>                            
+                    </group>               
+
+                </group>
+                <group>
+                    <field name="description" string="Information" attrs="{'readonly':[('state','=','confirmed')]}"/>
+                </group>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="view_order_line_manufacture_info_tree">
+        <field name="name">Manufacture Info</field>
+        <field name="model">sale.order.line.manufacture.info</field>
+        <field name="arch" type="xml">
+            <tree create="0">
+                <field name="date_order" string="Order Date"/>
+                <field name="mo_number" string="MO Number"/>
+                <field name="product_name" string="Product"/>
+                <field name="origin" string="Source Document"/>
+                <field name="sales_person" string="Sales Person"/>
+            </tree>
+        </field>
+    </record>
+    <record model="ir.ui.view" id="product_custom_history_tree">
+        <field name="name">product_custom_history_tree</field>
+        <field name="model">sale.order.line.manufacture.info</field>
+        <field name="arch" type="xml">
+            <tree string="Manufacture History">
+                <field name="length"/>
+                <field name="width"/>
+                <field name="is_printing"/>
+                <field name="is_dry_lamination"/>
+                <field name="is_extrusi"/>
+                <field name="is_slitting"/>
+                <field name="is_bag_making"/>
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="master_product_custom_history_tree">
+        <field name="name">master_product_custom_history_tree</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='notes']" position='after'>
+                <page string='Manufacture History'>
+                    <attribute name="editable" />
+                    <field name="manufacture">
+                        <tree string="Manufacture History" create="false" edit="false" delete="false" editable="bottom">
+                            <field name="length" readonly='1'/>
+                            <field name="width" readonly='1'/>
+                            <field name="is_printing" readonly='1'/>
+                            <field name="is_dry_lamination" readonly='1'/>
+                            <field name="is_extrusi" readonly='1'/>
+                            <field name="is_slitting" readonly='1'/>
+                            <field name="is_bag_making" readonly='1'/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+    <template id="assets_backend_manufacture_info" name="manufacture info" inherit_id="web.assets_backend">
+            <xpath expr="." position="inside">                
+                <script type="text/javascript" src="/custom_sale/static/src/js/manufacture_info.js"></script>
+            </xpath>
+    </template>
+</data>
+</odoo>

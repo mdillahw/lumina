@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_mrp_wizard,mrp.wizard,custom_manufacture.model_mrp_wizard,,1,1,1,1
+access_mrp_wizard_line,mrp.wizard.line,custom_manufacture.model_mrp_wizard_line,,1,1,1,1
+access_mrp_progress,mrp.progress,custom_manufacture.model_mrp_progress,,1,1,1,1

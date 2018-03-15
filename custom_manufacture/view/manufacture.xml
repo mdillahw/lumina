@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>  
+
+        <record id="mrp_wizard_form" model="ir.ui.view">
+            <field name="name">mrp_wizard_form</field>
+            <field name="model">mrp.wizard</field>
+            <field name="arch" type="xml">
+                <form>
+                    <field name="line_ids">
+                        <tree create="0" editable="bottom">
+                            <field name="progress" invisible="1"/>
+                            <field name="quantity" invisible="1"/>
+                            <field name="temp_progress" readonly="1"/>
+                            <field name="temp_quantity" readonly="1"/>
+                            <field name="qty_done" />
+                            <field name="qty_waste" />
+                        </tree>
+                    </field>
+                    <footer>
+                        <button name="create_progress" string="Save"  class="oe_highlight" type="object"/>
+                        <button name="cancel" string="Cancel"  special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record> 
+        <!-- tombol untuk lihat informasi dari Sale -->
+        <record id="custom_manufacture" model="ir.ui.view">
+            <field name="name">custom_manufacture</field>
+            <field name="model">mrp.production</field>
+            <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
+            <field name="arch" type="xml">
+                <field name="origin" position="after">
+                    <field name="manufacture_info_id" domain="[('product_id','=',product_id)]" context="{'product_id':product_id}"/>
+                </field>
+                <xpath expr="//form/sheet/notebook/page[3]" position="after">
+                    <page string="Progress">
+                        <field name="mrp_progress_ids" readonly="1">
+                            <tree create="0" delete="0">
+                                <field name="date" />
+                                <field name="progress" />
+                                <field name="quantity" />
+                                <field name="qty_done" />
+                                <field name="qty_waste" />
+                            </tree>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+        <!-- tombol untuk done partialy -->
+        <record id="custom_manufacture_button_done_partialy" model="ir.ui.view">
+            <field name="name">custom_manufacture</field>
+            <field name="model">mrp.production</field>
+            <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form/header" position="inside">
+                    <field name="check_to_done_partialy" invisible="1"/>
+                    <button name="button_mark_done" attrs="{'invisible': ['|','|','|', ('check_to_done_partialy', '=', False), ('consumed_less_than_planned', '=', False),('state','=','confirmed')]}" string="Mark as Done Partially" type="object" class="oe_highlight" confirm="You have consumed less material than what was planned. Are you sure you want to close this MO?"/>
+                    <button name="set_progress" string="Input Progress" type="object" class="oe_highlight" attrs="{'invisible':[('state','=','done')]}"/>
+                </xpath>
+            </field>
+        </record>
+        <!-- ubah tombol ulock muncul jika state = progress -->
+        <record id="custom_manufacture_unlock_button" model="ir.ui.view">
+            <field name="name">custom_manufacture_consumed_material</field>
+            <field name="model">mrp.production</field>
+            <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form/header/button[@name='action_toggle_is_locked']" position="replace">
+                    <button name="action_toggle_is_locked" attrs="{'invisible': ['|', '|', ('state', 'in', ['cancel','done','confirmed','planned']), ('id', '=', False), ('is_locked', '=', False)]}" string="Unlock" groups="mrp.group_mrp_manager" type="object" help="If the manufacturing order is unlocked you can add to the initial demand."/>
+                </xpath>
+            </field>
+        </record>
+        <!-- overide tree agar bisa editable bottom -->
+        <record id="custom_manufacture_add_bom" model="ir.ui.view">
+            <field name="name">custom_manufacture_consumed_material</field>
+            <field name="model">mrp.production</field>
+            <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form/sheet/notebook/page[1]/field[@name='move_raw_ids']" position="replace">
+                    <field name="move_raw_ids" context="{'final_lots': show_final_lots, 'form_view_ref': 'mrp.view_stock_move_lots', 'default_location_id': location_src_id, 'default_location_dest_id': production_location_id, 'default_state': 'confirmed', 'default_raw_material_production_id': id}" attrs="{'readonly': [('is_locked', '=', True)]}">
+                        <tree editable="bottom" default_order="is_done,sequence" decoration-muted="is_done" decoration-warning="quantity_done&gt;product_uom_qty" decoration-success="quantity_done==product_uom_qty" decoration-danger="reserved_availability &lt; product_uom_qty">
+                            <field name="product_id" required="1"/>
+                            <field name="name" invisible="1"/>
+                            <field name="unit_factor" invisible="1"/>
+                            <field name="product_uom" groups="product.group_uom"/>
+                            <field name="has_tracking" invisible="1"/>
+                            <field name="needs_lots" readonly="1" groups="stock.group_production_lot"/>
+                            <field name="is_done" invisible="1"/>
+                            <field name="sequence" invisible="1"/>
+                            <field name="location_id" invisible="1"/>
+                            <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
+                            <field name="state" invisible="1" force_save="1"/>
+                            <field name="product_uom_qty" string="To Consume"/>
+                            <field name="reserved_availability" attrs="{'invisible': [('is_done', '=', True)]}" string="Reserved"/>
+                            <field name="quantity_done" string="Consumed"/>
+                        </tree>
+                    </field>
+                </xpath>
+            </field>
+        </record>     
+        <!-- ubah finish muncul di work order -->
+        <record id="custom_manufacture_force_finish_workorder" model="ir.ui.view">
+            <field name="name">custom_manufacture_force_finish_workorder</field>
+            <field name="model">mrp.workorder</field>
+            <field name="inherit_id" ref="mrp.mrp_production_workcenter_form_view_inherit"/>
+            <field name="arch" type="xml">
+                <button name="button_finish" position="replace">
+                    <button name="button_finish" type="object" string="Finish Order" attrs="{'invisible': ['|', ('is_produced', '=', True),('state','in',['pending','ready','done'])]}" class="btn-info"/>
+                </button>
+            </field>
+        </record>
+        <!-- menu action untuk lihat daftar manufacture info -->
+        <record model="ir.actions.act_window" id="manufacture_info_list_action">
+            <field name="name">Manufacture Info</field>
+            <field name="res_model">sale.order.line.manufacture.info</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">Manufacture Info
+                </p>
+            </field>
+        </record>
+
+        <!-- menu item -->
+        <menuitem id="manufacture_info_menuitem" name="Manufacture Info" parent="mrp.menu_mrp_manufacturing"
+                      action="manufacture_info_list_action" sequence="50"/>
+</odoo>
